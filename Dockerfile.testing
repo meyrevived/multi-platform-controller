@@ -13,19 +13,16 @@ COPY --chown=1001:0 cmd/ cmd/
 
 ENV GOTOOLCHAIN=auto
 
-# debug
-RUN whoami
-
 #### SeaLights instrumentation
 # Download and extract Sealights Go agent
-RUN wget -nv -O sealights-go-agent.tar.gz \
-https://agents.sealights.co/slgoagent/latest/slgoagent-linux-amd64.tar.gz \
+RUN curl -0 https://agents.sealights.co/slgoagent/latest/slgoagent-linux-amd64.tar.gz \ 
+-o sealights-go-agent.tar.gz \
 && tar -xzf ./sealights-go-agent.tar.gz \
 && rm -f ./sealights-go-agent.tar.gz 
 
 # Download and extract Sealights cli tool
-RUN wget -nv -O sealights-slcli.tar.gz \
-https://agents.sealights.co/slcli/latest/slcli-linux-amd64.tar.gz \
+RUN curl -0 https://agents.sealights.co/slcli/latest/slcli-linux-amd64.tar.gz \
+-o sealights-slcli.tar.gz \
 && tar -xzf ./sealights-slcli.tar.gz \
 && rm -f ./sealights-slcli.tar.gz
 
