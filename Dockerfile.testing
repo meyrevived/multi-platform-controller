@@ -2,13 +2,16 @@
 FROM registry.access.redhat.com/ubi9/go-toolset:1.21.11-9@sha256:adeedd50ce51475df1978b2da5ab1c0017f9596a5310fc54a26af285345ad7cf as builder
 ARG SEALIGHTS_TOKEN
 ARG BRANCH_NAME
+ARG SERVICE_NAME
 ARG BUILD_NAME
 
 # Copy the Go Modules manifests
 COPY go.mod go.mod
 COPY vendor/ vendor/
-COPY pkg/ pkg/
-COPY cmd/ cmd/
+COPY --chown=1001:0 pkg/ pkg/
+COPY --chown=1001:0 cmd/ cmd/
+
+ENV GOTOOLCHAIN=auto
 
 # debug
 RUN whoami
@@ -31,15 +34,15 @@ RUN echo "${SEALIGHTS_TOKEN}" > ./token.txt
 
 # Sealights configuration
 RUN ./slcli config init --lang go --token ./token.txt
-RUN ./slcli config create-bsid --app multi-platform-controller \
---branch ${BRANCH_NAME} --build ${BUILD_NAME}
+RUN ./slcli config create-bsid --app "${SERVICE_NAME}" \
+--branch "${BRANCH_NAME}" --build "${BUILD_NAME}"
 
 # Run Sealights scan
 RUN ./slcli scan --bsid buildSessionId.txt --path-to-scanner \
 ./slgoagent --workspacepath ./ --scm git --scmProvider github
 
 # Build
-RUN GOTOOLCHAIN=auto CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -o multi-platform-controller cmd/controller/main.go
+RUN CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -o multi-platform-controller cmd/controller/main.go
 
 # Run all tests that are written to the MPC repo
 RUN go fmt ./cmd/... ./pkg/...
