@@ -1,0 +1,97 @@
+apiVersion: tekton.dev/v1beta1
+kind: Task
+metadata:
+  name: build-multi-platform-controller-testing-container
+spec:
+  description: |
+    This task creates a running container with multi-platform-controller running on it and 
+    SeaLights tracking its testing by downdstream tasks in the pipeline.
+    MPC build process is immediately followed by running all unit, functional and local 
+    integration tests.
+  results:
+    - name: sealights-output-image
+      description: |
+        The resulting container image which has multi-platform-controller running on it as 
+        well as a SealIghts agent monitor testing done on it 
+  params:
+    - name: git-url
+      description: The URL of the pull requests' source branch.
+      type: string
+    - name: latest-commit
+      description: the SHA of the latest commit to the pull request
+      type: string
+      default: '{{revision}}'
+    - name: pull-request-number
+      description: The number assigned to the pull request from github
+    - name: storage-driver
+      description: The Buildah storage driver to use (e.g., vfs or overlay).
+      type: string
+      default: "vfs"
+    - name: output-image
+      description: name of the image of multi-platform-controller for testing with SeaLights running agent
+      type: string
+      default: quay.io/redhat-user-workloads/rhtap-build-tenant/multi-platform-controller/multi-platform-controller:pr-testing-{{revision}}
+    - name: image-expires-after
+      description: image lifespan on quay.io
+      type: string
+      default: 3d
+    - name: dockerfile
+      description: Path to the Dockerfile for building the multi-platform-controller testing image
+      type: string
+      default: "Dockerfile.testing"
+  volumes:
+    - name: sourcecode
+      emptyDir: {}
+    - name: varlibcontainers
+      emptyDir: {}
+    - name: git-auth
+      secret:
+        secretName: '{{ git_auth_secret }}'
+    - name: multi-platform-controller-sealights-credentials
+      secret:
+        secretName: multi-platform-controller-sealights-credentials
+  steps:
+    - name: clone-source-code
+      image: quay.io/konflux-ci/git-clone@sha256:4e53ebd9242f05ca55bfc8d58b3363d8b9d9bc3ab439d9ab76cdbdf5b1fd42d9
+      volumeMounts:
+        - name: sourcecode
+          mountPath: /source-code
+      env:
+        - name: GIT_URL
+          value: $(params.git-url)
+        - name: GIT_REVISION
+          value: $(params.git-revision)
+        - name: CHECKOUT_DIR
+          value: /source-code
+      script: |
+        #!/bin/bash
+        set -euo pipefail
+        /ko-app/git-init \
+          -url="${GIT_URL}" \
+          -revision="${GIT_REVISION}" \
+          -path="${CHECKOUT_DIR}"
+    - name: build-mpc-testing-container
+      image: registry.access.redhat.com/ubi9/buildah@sha256:c62b2318eb4709c216ad25969abae5ff6b56e9879d266b539a46fdfc99e8361e
+      volumeMounts:
+        - name: varlibcontainers
+          mountPath: /var/lib/containers
+        - name: sourcecode
+          mountPath: /source-code
+        - name: multi-platform-controller-sealights-credentials
+          mountPath: /usr/local/multi-platform-controller-sealights-credentials
+      securityContext:
+        capabilities:
+          add:
+            - SETFCAP
+      env:
+        - name: STORAGE_DRIVER
+          value: $(params.storage-driver)
+        - name: COMMIT_SHA
+          value: $(params.latest-commit)
+        - name: DOCKERFILE
+          value: $(params.dockerfile)
+        - name: IMAGE
+          value: $(params.output-image)
+        - name: SOURCE_CODE_DIR
+          value: "/source-code"
+          # WIP - do not judge lest ye be judged ;)
