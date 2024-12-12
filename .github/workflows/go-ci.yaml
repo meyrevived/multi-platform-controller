@@ -1,7 +1,7 @@
 name: Validate PR - golang CI
 on:
   pull_request:
-    branches: [ main ]
+    branches: [main]
 jobs:
   lint:
     name: Lint
@@ -12,7 +12,7 @@ jobs:
       - name: Install Go
         uses: actions/setup-go@0c52d547c9bc32b1aa3301fd7a9cb496313a4491 # v5
         with:
-          go-version-file: './go.mod'
+          go-version-file: "./go.mod"
       - name: golangci-lint
         uses: golangci/golangci-lint-action@3cfe3a4abbb849e10058ce4af15d205b6da42804 # v4
         with:
@@ -26,7 +26,7 @@ jobs:
       - name: Install Go
         uses: actions/setup-go@0c52d547c9bc32b1aa3301fd7a9cb496313a4491 # v5
         with:
-          go-version-file: './go.mod'
+          go-version-file: "./go.mod"
       - name: Check go mod status
         run: |
           go mod tidy
@@ -46,21 +46,20 @@ jobs:
             exit 1
           fi
   unit:
-    name: Golang Unit tests
     runs-on: ubuntu-latest
     steps:
       - name: Check out code
         uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332 # v4
-      - name: Install Go
-        uses: actions/setup-go@0c52d547c9bc32b1aa3301fd7a9cb496313a4491 # v5
+      - name: Trigger mpc-test-ci workflow
+        uses: multi-platform-controller/workflow-dispatch@1
         with:
-          go-version-file: './go.mod'
-      - name: Build
-        run: make build
-      - name: Test
-        run: make test
-      - name: Codecov
-        uses: codecov/codecov-action@84508663e988701840491b86de86b666e8a86bed # v4
+          repository: ${{github.event.pull_request.head.repo.full_name}}
+          workflow: mpc-test-ci.yaml
+          ref: ${{github.sha}}
+          inputs: |
+            target-branch: ${{github.event.pull_request.head.ref}}
+        env: 
+          GITHUB_TOKEN: ${{ secrets.REPO_ACCESS_TOKEN }}
   security_scan:
     name: Security scan
     runs-on: ubuntu-latest
@@ -69,13 +68,13 @@ jobs:
         uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332 # v4
       - uses: actions/setup-go@0c52d547c9bc32b1aa3301fd7a9cb496313a4491 # v5
         with:
-          go-version-file: './go.mod'
+          go-version-file: "./go.mod"
       # https://github.com/securego/gosec/blob/12be14859bc7d4b956b71bef0b443694aa519d8a/README.md#integrating-with-code-scanning
       - name: Run Gosec Security Scanner
         uses: securego/gosec@master
         with:
           # we let the report trigger content trigger a failure using the GitHub Security features.
-          args: '-tags normal,periodic -no-fail -fmt sarif -out results.sarif ./...'
+          args: "-tags normal,periodic -no-fail -fmt sarif -out results.sarif ./..."
       - name: Upload SARIF file
         uses: github/codeql-action/upload-sarif@1b1aada464948af03b950897e5eb522f92603cc2 # v3
         with:
