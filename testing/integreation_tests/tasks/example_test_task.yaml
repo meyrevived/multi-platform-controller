@@ -1,0 +1,11 @@
+---
+apiVersion: tekton.dev/v1
+kind: Task
+metadata:
+  name: konflux-e2e-runner
+spec:
+  description: |
+    Here be an example integration test Task
+  params:
+  volumes:
+  steps:
