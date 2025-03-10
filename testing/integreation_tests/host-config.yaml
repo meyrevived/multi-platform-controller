@@ -1,0 +1,47 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  labels:
+    build.appstudio.redhat.com/multi-platform-config: hosts
+  name: host-config
+  namespace: multi-platform-controller
+data:
+  dynamic-platforms: linux/s390x, linux/arm64, linux/ppc64le
+  instance-tag: rhtap-mpc-testing
+
+  dynamic.linux-arm64.type: aws
+  dynamic.linux-arm64.region: us-east-1
+  dynamic.linux-arm64.ami: ami-03d6a5256a46c9feb # check
+  dynamic.linux-arm64.instance-type: t2.nano
+  dynamic.linux-arm64.key-name: mpc-testing
+  dynamic.linux-arm64.aws-secret: awsiam # change
+  dynamic.linux-arm64.ssh-secret: awskeys # change
+  dynamic.linux-arm64.security-group: "launch-wizard-1" # check
+  dynamic.linux-arm64.max-instances: "20" # in case we have multiple tests running in parallel 
+  dynamic.linux-arm64.concurrency: "2"
+  dynamic.linux-arm64.max-age: "10"
+
+  dynamic.linux-s390x.type: ibmz
+  dynamic.linux-s390x.ssh-secret: awskeys # change
+  dynamic.linux-s390x.secret: ibmiam # change
+  dynamic.linux-s390x.vpc: "us-east-default-vpc"  # check
+  dynamic.linux-s390x.key: "sdouglas-test" # change
+  dynamic.linux-s390x.subnet: "us-east-2-default-subnet" # change
+  dynamic.linux-s390x.image-id: "r014-17c957e0-01a1-4f7f-bc24-191f5f10eba8" # check
+  dynamic.linux-s390x.region: "us-east-2"
+  dynamic.linux-s390x.url: "https://us-east.iaas.cloud.ibm.com/v1"
+  dynamic.linux-s390x.profile: "bz2-2x8"
+  dynamic.linux-s390x.max-instances: "20" # in case we have multiple tests running in parallel 
+
+  dynamic.linux-ppc64le.type: ibmp
+  dynamic.linux-ppc64le.ssh-secret: awskeys # change
+  dynamic.linux-ppc64le.secret: ibmiam # change
+  dynamic.linux-ppc64le.key: "sdouglas-ppc" # change
+  dynamic.linux-ppc64le.image: "sdouglas-rhel-test" # check
+  dynamic.linux-ppc64le.crn: "crn:v1:bluemix:public:power-iaas:dal10:a/934e118c399b4a28a70afdf2210d708f:8c9ef568-16a5-4aa2-bfd5-946349c9aeac::" # check
+  dynamic.linux-ppc64le.url: "https://us-south.power-iaas.cloud.ibm.com"
+  dynamic.linux-ppc64le.network: "dff71085-73da-49f5-9bf2-5ea60c66c99b" # check
+  dynamic.linux-ppc64le.system: "e980"
+  dynamic.linux-ppc64le.cores: "0.25"
+  dynamic.linux-ppc64le.memory: "2"
+  dynamic.linux-ppc64le.max-instances: "20" # in case we have multiple tests running in parallel 
