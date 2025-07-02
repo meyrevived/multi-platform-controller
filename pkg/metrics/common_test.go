@@ -3,11 +3,11 @@ package mpcmetrics
 import (
 	"context"
 	"fmt"
+	. "github.com/onsi/ginkgo/v2"
 	"math/rand"
 	"sync"
 	"time"
-
-	. "github.com/onsi/ginkgo/v2"
+	//"time"
 )
 
 var _ = Describe("Common functions unit tests", func() {
@@ -30,22 +30,25 @@ var _ = Describe("Common functions unit tests", func() {
 				defer cancel()
 
 				var wg sync.WaitGroup
+				readerCount := 5
 				writerCount := 5
 
 				// Persistent reader
-				wg.Add(1)
-				go func() {
-					defer wg.Done()
-					defer GinkgoRecover()
-					for {
-						select {
-						case <-ctx.Done():
-							return
-						default:
-							checkProbes(ctx)
+				for range readerCount {
+					wg.Add(1)
+					go func() {
+						defer wg.Done()
+						defer GinkgoRecover()
+						for {
+							select {
+							case <-ctx.Done():
+								return
+							default:
+								checkProbes(ctx)
+							}
 						}
-					}
-				}()
+					}()
+				}
 
 				// Persistent writers - these writers continuously attempt to add new entries to probes, which is the
 				// "write" part of the race condition created in the test.
