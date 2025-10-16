@@ -120,10 +120,10 @@ func extractPlatform(tr *tektonapi.TaskRun) (string, error) {
 func validateNonZeroPositiveNumber(value string, maxValue int) (int, error) {
 	num, err := strconv.Atoi(value)
 	if err != nil {
-		return -1, errors.Join(errInvalidNumericValue, err)
+		return -1, fmt.Errorf("invalid value '%s': must be a valid integer between 1 and %d: %w", value, maxValue, err)
 	}
-	if num < 0 || num > maxValue {
-		return -1, errInvalidNumericValue
+	if num < 1 || num > maxValue {
+		return -1, fmt.Errorf("invalid value '%s': must be a valid integer between 1 and %d", value, maxValue)
 	}
 	return num, nil
 }
@@ -138,7 +138,11 @@ func validateNonZeroPositiveNumber(value string, maxValue int) (int, error) {
 // - int: The validated integer value
 // - error: If value is invalid or out of range
 func validateMaxInstances(value string) (int, error) {
-	return validateNonZeroPositiveNumber(value, maxInstancesValue)
+	result, err := validateNonZeroPositiveNumber(value, maxInstancesValue)
+	if err != nil {
+		return -1, fmt.Errorf("invalid max-instances: %w", err)
+	}
+	return result, nil
 }
 
 // validateMaxAllocationTimeout validates a string represents a valid allocation timeout value
@@ -151,7 +155,11 @@ func validateMaxInstances(value string) (int, error) {
 // - int: The validated integer value
 // - error: If value is invalid or out of range
 func validateMaxAllocationTimeout(value string) (int, error) {
-	return validateNonZeroPositiveNumber(value, maxAllocationTimeout)
+	result, err := validateNonZeroPositiveNumber(value, maxAllocationTimeout)
+	if err != nil {
+		return -1, fmt.Errorf("invalid allocation-timeout: %w", err)
+	}
+	return result, nil
 }
 
 // obfuscateIP takes an IP address and returns it with the first three octets replaced with asterisks
@@ -261,6 +269,8 @@ func parseDynamicHostInstanceTypeKey(platformConfigName string) (platform, insta
 		return "", "", fmt.Errorf("invalid platform config name: no dashes found in '%s'", platformConfigName)
 	}
 
+	// Platform is everything after the last dash.
+	platform = platformConfigName[lastDash+1:]
 	if firstDash == lastDash {
 		// Simple platform with no instance type (e.g., "linux-arm64")
 		// Platform is everything after the dash, no instance type
@@ -268,8 +278,6 @@ func parseDynamicHostInstanceTypeKey(platformConfigName string) (platform, insta
 		return platform, "", nil
 	}
 
-	// Platform is everything after the last dash.
-	platform = platformConfigName[lastDash+1:]
 	// Instance type is everything between the first and last dash.
 	instanceType = platformConfigName[firstDash+1 : lastDash]
 

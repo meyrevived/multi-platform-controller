@@ -234,7 +234,7 @@ func ParseAndValidate(ctx context.Context, kubeClient client.Client, data map[st
 
 		// Concurrency (required)
 		if concurrencyStr := data[prefix+"concurrency"]; concurrencyStr != "" {
-			concurrency, err := validateNumericValue(concurrencyStr, maxStaticConcurrency)
+			concurrency, err := validateNonZeroPositiveNumber(concurrencyStr, maxStaticConcurrency)
 			if err != nil {
 				return nil, fmt.Errorf("dynamic pool platform '%s': invalid concurrency '%s': %w", platform, concurrencyStr, err)
 			}
@@ -245,7 +245,7 @@ func ParseAndValidate(ctx context.Context, kubeClient client.Client, data map[st
 
 		// Max age (required)
 		if maxAgeStr := data[prefix+"max-age"]; maxAgeStr != "" {
-			maxAge, err := validateNumericValue(maxAgeStr, maxPoolHostAge)
+			maxAge, err := validateNonZeroPositiveNumber(maxAgeStr, maxPoolHostAge)
 			if err != nil {
 				return nil, fmt.Errorf("dynamic pool platform '%s': invalid max-age '%s': %w", platform, maxAgeStr, err)
 			}
@@ -348,7 +348,7 @@ func ParseAndValidate(ctx context.Context, kubeClient client.Client, data map[st
 			hostConfig.Secret = value
 
 		case "concurrency":
-			concurrency, err := validateNumericValue(value, maxStaticConcurrency)
+			concurrency, err := validateNonZeroPositiveNumber(value, maxStaticConcurrency)
 			if err != nil {
 				return nil, fmt.Errorf("static host '%s': invalid concurrency '%s': %w", hostName, value, err)
 			}

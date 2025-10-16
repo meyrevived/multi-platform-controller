@@ -176,7 +176,7 @@ var _ = Describe("Host Configuration Validation Tests", func() {
 				func(value string, maxValue int, expected int) {
 					Expect(validateNonZeroPositiveNumber(value, maxValue)).Should(Equal(expected))
 				},
-				Entry("with minimum value 0", "0", 100, 0),
+				Entry("with minimum value 1", "1", 100, 1),
 				Entry("with mid-range value", "50", 100, 50),
 				Entry("with maximum value", "100", 100, 100),
 				Entry("with very large maximum value", "1000", 1000000000, 1000),
@@ -184,11 +184,13 @@ var _ = Describe("Host Configuration Validation Tests", func() {
 		})
 
 		When("validating numeric values outside valid range or invalid format", func() {
-			DescribeTable("it should return an error",
+			DescribeTable("it should return an error containing the range",
 				func(value string, maxValue int) {
 					_, err := validateNonZeroPositiveNumber(value, maxValue)
-					Expect(err).Should(MatchError(errInvalidNumericValue))
+					Expect(err).Should(HaveOccurred())
+					Expect(err.Error()).Should(ContainSubstring("must be a valid integer between 1 and"))
 				},
+				Entry("with zero value", "0", 100),
 				Entry("with negative value", "-1", 100),
 				Entry("with value exceeding maximum", "101", 100),
 				Entry("with value far exceeding maximum", "100000", 100),
